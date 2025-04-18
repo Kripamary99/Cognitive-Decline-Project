@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memotag - Cognitive Decline Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .visualization-card {
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            height: 100%;
+        }
+        .status-normal {
+            color: green;
+        }
+        .status-warning {
+            color: orange;
+        }
+        .status-abnormal {
+            color: red;
+        }
+        .visualization-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+        }
+        .recording-indicator {
+            color: red;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .brand-header {
+            color: #2196F3;
+            border-bottom: 3px solid #2196F3;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .brand-subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            margin-top: -20px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center brand-header">Memotag</h1>
+        <h2 class="text-center brand-subtitle">Cognitive Decline Analysis</h2>
+        
+        <!-- Audio Input Section -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Record or Upload Audio</h5>
+                <!-- Recording Section -->
+                <div class="mb-4">
+                    <button id="recordButton" class="btn btn-primary me-2">
+                        <i class="fas fa-microphone"></i> Start Recording
+                    </button>
+                    <span id="recordingStatus"></span>
+                    <audio id="audioPlayback" controls style="display: none;" class="mt-2"></audio>
+                </div>
+                
+                <!-- Upload Section -->
+                <form id="uploadForm">
+                    <div class="mb-3">
+                        <label for="audioFile" class="form-label">Or upload an audio file:</label>
+                        <input type="file" class="form-control" id="audioFile" accept="audio/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Analyze</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Analysis Results Section -->
+        <div id="results" style="display: none;">
+            <div class="alert alert-success" id="analysisStatus">
+                Analysis completed successfully!
+            </div>
+
+            <!-- Transcription -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Transcription</h5>
+                    <p id="transcriptionText" class="card-text"></p>
+                </div>
+            </div>
+
+            <!-- Sentiment Analysis Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Sentiment Analysis</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-subtitle mb-2">Overall Sentiment</h6>
+                                    <h3 id="overallSentiment" class="mb-0"></h3>
+                                    <p id="sentimentLabel" class="mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2">Summary</h6>
+                                    <div class="row text-center">
+                                        <div class="col">
+                                            <div class="text-success">
+                                                <h4 id="positiveCount">0</h4>
+                                                <small>Positive</small>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="text-warning">
+                                                <h4 id="neutralCount">0</h4>
+                                                <small>Neutral</small>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="text-danger">
+                                                <h4 id="negativeCount">0</h4>
+                                                <small>Negative</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sentiment Visualization -->
+                    <div class="sentiment-viz mb-3">
+                        <img id="sentimentViz" class="img-fluid" style="width: 100%; max-height: 300px; object-fit: contain;">
+                    </div>
+
+                    <!-- Sentence-level Analysis -->
+                    <h6 class="mb-3">Sentence-level Analysis</h6>
+                    <div id="sentenceAnalysis" class="list-group">
+                        <!-- Sentences will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Risk Assessment</h5>
+                    <h6 id="riskLevel" class="card-subtitle mb-2"></h6>
+                    <div class="progress mb-3">
+                        <div id="riskScore" class="progress-bar" role="progressbar"></div>
+                    </div>
+                    <p id="riskInterpretation" class="card-text"></p>
+                </div>
+            </div>
+
+            <!-- Visualizations -->
+            <h4 class="mb-3">Speech Analysis Visualizations</h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card visualization-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Waveform</h5>
+                            <img id="waveformViz" class="visualization-img">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card visualization-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Mel Spectrogram</h5>
+                            <img id="spectrogramViz" class="visualization-img">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card visualization-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Pitch Contour</h5>
+                            <img id="pitchViz" class="visualization-img">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cognitive Metrics -->
+            <h4 class="mb-3">Cognitive Analysis Metrics</h4>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card metric-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Speech Rate</h5>
+                            <h6 id="speechRateValue" class="card-subtitle mb-2"></h6>
+                            <p id="speechRateStatus" class="card-text"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card metric-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Pause Analysis</h5>
+                            <h6 id="pauseValue" class="card-subtitle mb-2"></h6>
+                            <p id="pauseStatus" class="card-text"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card metric-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Pitch Metrics</h5>
+                            <h6 id="pitchValue" class="card-subtitle mb-2"></h6>
+                            <p id="pitchStatus" class="card-text"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card metric-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Voice Quality</h5>
+                            <h6 id="voiceValue" class="card-subtitle mb-2"></h6>
+                            <p id="voiceStatus" class="card-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        const recordButton = document.getElementById('recordButton');
+        const recordingStatus = document.getElementById('recordingStatus');
+        const audioPlayback = document.getElementById('audioPlayback');
+
+        // Recording functionality
+        recordButton.addEventListener('click', async () => {
+            if (recordButton.textContent.includes('Start')) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioPlayback.src = URL.createObjectURL(audioBlob);
+                        audioPlayback.style.display = 'block';
+                        
+                        // Create FormData and submit
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.wav');
+                        analyzeAudio(formData);
+                    };
+
+                    mediaRecorder.start();
+                    recordButton.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
+                    recordingStatus.innerHTML = '<span class="recording-indicator"><i class="fas fa-circle"></i></span> Recording...';
+                } catch (err) {
+                    console.error('Error accessing microphone:', err);
+                    alert('Error accessing microphone. Please ensure you have granted microphone permissions.');
+                }
+            } else {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                recordButton.innerHTML = '<i class="fas fa-microphone"></i> Start Recording';
+                recordingStatus.textContent = '';
+            }
+        });
+
+        // File upload handling
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('audioFile');
+            if (fileInput.files[0]) {
+                formData.append('audio', fileInput.files[0]);
+                analyzeAudio(formData);
+            }
+        });
+
+        // Common analysis function
+        async function analyzeAudio(formData) {
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('results').style.display = 'block';
+                    
+                    // Display transcription
+                    document.getElementById('transcriptionText').textContent = data.results.transcription;
+
+                    // Display sentiment analysis
+                    const sentiment = data.results.sentiment_analysis;
+                    document.getElementById('overallSentiment').textContent = `${sentiment.overall.score}%`;
+                    document.getElementById('sentimentLabel').textContent = sentiment.overall.label;
+                    
+                    // Update sentiment counts
+                    document.getElementById('positiveCount').textContent = sentiment.summary.positive_count;
+                    document.getElementById('neutralCount').textContent = sentiment.summary.neutral_count;
+                    document.getElementById('negativeCount').textContent = sentiment.summary.negative_count;
+                    
+                    // Display sentiment visualization
+                    if (sentiment.visualization) {
+                        document.getElementById('sentimentViz').src = `data:image/png;base64,${sentiment.visualization}`;
+                    }
+                    
+                    // Display sentence-level analysis
+                    const sentenceAnalysisDiv = document.getElementById('sentenceAnalysis');
+                    sentenceAnalysisDiv.innerHTML = ''; // Clear previous content
+                    
+                    sentiment.sentences.forEach((sentence, index) => {
+                        const sentimentClass = sentence.normalized_score > 0.2 ? 'text-success' : 
+                                            sentence.normalized_score < -0.2 ? 'text-danger' : 'text-warning';
+                        
+                        const sentenceHtml = `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1">${sentence.sentence}</p>
+                                        <small class="${sentimentClass}">
+                                            Sentiment: ${(sentence.normalized_score * 100).toFixed(1)}% 
+                                            (Confidence: ${(sentence.confidence * 100).toFixed(1)}%)
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        sentenceAnalysisDiv.innerHTML += sentenceHtml;
+                    });
+
+                    // Display risk assessment
+                    const riskLevel = data.results.cognitive_analysis.risk_assessment.level;
+                    const riskScore = data.results.cognitive_analysis.risk_assessment.score;
+                    document.getElementById('riskLevel').textContent = `Risk Level: ${riskLevel}`;
+                    document.getElementById('riskScore').style.width = `${riskScore}%`;
+                    document.getElementById('riskScore').textContent = `${riskScore}%`;
+                    document.getElementById('riskInterpretation').textContent = data.results.cognitive_analysis.risk_assessment.interpretation;
+
+                    // Display visualizations
+                    document.getElementById('waveformViz').src = `data:image/png;base64,${data.results.cognitive_analysis.visualizations.waveform}`;
+                    document.getElementById('spectrogramViz').src = `data:image/png;base64,${data.results.cognitive_analysis.visualizations.mel_spectrogram}`;
+                    document.getElementById('pitchViz').src = `data:image/png;base64,${data.results.cognitive_analysis.visualizations.pitch_contour}`;
+
+                    // Display cognitive metrics
+                    const metrics = data.results.cognitive_analysis.metrics;
+                    
+                    // Speech Rate
+                    document.getElementById('speechRateValue').textContent = `${metrics.speech_rate.value} ${metrics.speech_rate.unit}`;
+                    document.getElementById('speechRateStatus').textContent = metrics.speech_rate.status;
+                    
+                    // Pause Analysis
+                    document.getElementById('pauseValue').textContent = `Pause Ratio: ${metrics.pause_analysis.pause_ratio}%`;
+                    document.getElementById('pauseStatus').textContent = metrics.pause_analysis.status;
+                    
+                    // Pitch Metrics
+                    document.getElementById('pitchValue').textContent = `Mean: ${metrics.pitch_metrics.mean} Hz`;
+                    document.getElementById('pitchStatus').textContent = metrics.pitch_metrics.status;
+                    
+                    // Voice Quality
+                    document.getElementById('voiceValue').textContent = `ZCR: ${metrics.voice_quality.zero_crossing_rate}`;
+                    document.getElementById('voiceStatus').textContent = metrics.voice_quality.status;
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred during analysis');
+            }
+        }
+    </script>
+</body>
+</html> 
